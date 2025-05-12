@@ -14,31 +14,32 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
     #   snac-url: ${{ steps.snac-url.outputs }}
-      snac-ver: ${{ steps.snac-ver.outputs }}
+      snac-ver: ${{ steps.snac-ver.outputs.snac-ver }}
     steps:
       - id: snac-url
         name: Find snac specific version
         run: |
-           curl -s -X 'GET' 'https://codeberg.org/api/v1/repos/grunfink/snac2/tags?page=1&limit=10' -H 'accept: application/json' | jq --arg ver "{{ inputs.tag }}" \
+           snac_url=`curl -s -X 'GET' 'https://codeberg.org/api/v1/repos/grunfink/snac2/tags?page=1&limit=10' -H 'accept: application/json' | jq --arg ver "{{ inputs.tag }}" \
            'map(select(.name == $ver)) as $match | 
            if ($match | length) > 0 then 
              $match[0].tarball_url 
            else 
              .[0].tarball_url 
-           end' - | tr -d '"'
+           end' - | tr -d '"'`
+           echo url=$snac_url >> GITHUB_OUTPUT
         #    env.SNAC_URL=`cat ver.txt | tr -d '"'`
         #    env.SNAC_VER=`echo ${{ env.SNAC_URL }} cut -d / -f 7`
 
       - name: Download source tarball
-        run: curl -s -O ${{ steps.snac-url.outputs }}
+        run: curl -s -O ${{ steps.snac-url.outputs.url }}
       - id: snac-ver
         name: Get snac version
-        run: echo ${{ steps.snac-url.outputs }} | cut -d / -f 7
+        run: echo snac-ver=`${{ steps.snac-url.outputs.url }} | cut -d / -f 7` >> GITHUB_OUTPUT
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: snac-src
-          path: ${{ steps.snac-ver.outputs }}
+          path: ${{ steps.snac-ver.outputs.snac-ver }}
           retention-days: 1
 
   buildpush:
