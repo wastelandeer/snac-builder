@@ -36,7 +36,7 @@ jobs:
       - id: snac-ver
         name: Get snac version
         run: |
-          snac-ver=`${{ steps.snac-url.outputs.url }} | cut -d / -f 7`
+          snac-ver=`echo ${{ steps.snac-url.outputs.url }} | cut -d / -f 7`
           echo "snac-ver=$snac-ver" >> $GITHUB_OUTPUT
       - name: Upload artifact
         uses: actions/upload-artifact@v4
