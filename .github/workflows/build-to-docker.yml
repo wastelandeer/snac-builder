@@ -16,6 +16,8 @@ jobs:
     #   snac-url: ${{ steps.snac-url.outputs }}
       snac-ver: ${{ steps.snac-ver.outputs }}
     steps:
+      - name: Install dependencies
+        run: sudo apt install jq
       - id: snac-url
         name: Find snac specific version
         run: |
