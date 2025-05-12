@@ -20,11 +20,11 @@ jobs:
         name: Find snac specific version
         run: |
            curl -s -X 'GET' 'https://codeberg.org/api/v1/repos/grunfink/snac2/tags?page=1&limit=10' -H 'accept: application/json' | jq --arg ver "{{ inputs.tag }}" \
-           'map(select(.name == $ver)) as $match | \
-           if ($match | length) > 0 then \
-             $match[0].tarball_url \
-           else \
-             .[0].tarball_url \
+           'map(select(.name == $ver)) as $match | 
+           if ($match | length) > 0 then 
+             $match[0].tarball_url 
+           else 
+             .[0].tarball_url 
            end' - | tr -d '"'
         #    env.SNAC_URL=`cat ver.txt | tr -d '"'`
         #    env.SNAC_VER=`echo ${{ env.SNAC_URL }} cut -d / -f 7`
