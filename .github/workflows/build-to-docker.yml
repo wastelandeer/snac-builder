@@ -26,7 +26,7 @@ jobs:
            else 
              .[0].tarball_url 
            end' - | tr -d '"'`
-           echo url=$snac_url >> GITHUB_OUTPUT
+           echo "url=$snac_url" >> GITHUB_OUTPUT
         #    env.SNAC_URL=`cat ver.txt | tr -d '"'`
         #    env.SNAC_VER=`echo ${{ env.SNAC_URL }} cut -d / -f 7`
 
