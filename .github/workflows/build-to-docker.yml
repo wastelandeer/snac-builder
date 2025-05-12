@@ -26,9 +26,9 @@ jobs:
            else 
              .[0].tarball_url 
            end' - | tr -d '"'`
-           echo $snac_url
+        #    echo $snac_url
            echo "url=$snac_url" >> $GITHUB_OUTPUT
-           cat $GITHUB_OUTPUT
+        #    cat $GITHUB_OUTPUT
         #    env.SNAC_URL=`cat ver.txt | tr -d '"'`
         #    env.SNAC_VER=`echo ${{ env.SNAC_URL }} cut -d / -f 7`
 
@@ -36,7 +36,7 @@ jobs:
         run: curl -s -O ${{ steps.snac-url.outputs.url }}
       - id: snac-ver
         name: Get snac version
-        run: echo snac-ver=`${{ steps.snac-url.outputs.url }} | cut -d / -f 7` >> GITHUB_OUTPUT
+        run: echo "snac-ver=`${{ steps.snac-url.outputs.url }} | cut -d / -f 7`" >> $GITHUB_OUTPUT
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
