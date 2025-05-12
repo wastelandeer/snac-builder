@@ -1,0 +1,80 @@
+name: Build snac2 Docker image and push to the registry
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to build container from
+        required: true
+        default: latest
+        type: string
+
+jobs:
+  obtain:
+    runs-on: ubuntu-latest
+    outputs:
+    #   snac-url: ${{ steps.snac-url.outputs }}
+      snac-ver: ${{ steps.snac-ver.outputs }}
+    steps:
+      - id: snac-url
+        name: Find snac specific version
+        run: |
+           curl -s -X 'GET' 'https://codeberg.org/api/v1/repos/grunfink/snac2/tags?page=1&limit=10' -H 'accept: application/json' | jq --arg ver "{{ inputs.tag }}" 
+           'map(select(.name == $ver)) as $match |
+           if ($match | length) > 0 then
+             $match[0].tarball_url
+           else
+             .[0].tarball_url
+           end' - | tr -d '"'
+        #    env.SNAC_URL=`cat ver.txt | tr -d '"'`
+        #    env.SNAC_VER=`echo ${{ env.SNAC_URL }} cut -d / -f 7`
+
+      - name: Download source tarball
+        run: curl -s -O ${{ steps.snac-url.outputs }}
+      - id: snac-ver
+        name: Get snac version
+        run: echo ${{ steps.snac-url.outputs }} | cut -d / -f 7
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: snac-src
+          path: ${{ steps.snac-ver.outputs }}
+          retention-days: 1
+
+  buildpush:
+    needs: obtain
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+    # - name: Checkout repository
+      # uses: actions/checkout@v4
+      # with:
+        # fetch-depth: 0
+        # fetch-tags: 'true'
+    # - name: Output latest tag
+    # - name: Checkout selected tag
+      # uses: ./.github/actions/checkout-tag
+      # with:
+        # tag: ${{ inputs.tag }}
+    # - name: Output latest tag
+      # run: echo `pwd`; echo "${{ inputs.tag }}"
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: snac-src
+    - name: Extract sources
+      run: |
+        tar -xzf ${{ needs.obtain.outputs.snac-ver }}
+        cd snac2
+      
+    - name: Login to GitHub packages registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag snac2
+    - name: Push built Docker image to the registry
+      run: |
+        docker tag snac2 ghcr.io/${{ github.repository_owner }}/snac2:${{ inputs.tag }}
+        docker push ghcr.io/${{ github.repository_owner }}/snac2:${{ inputs.tag }}
