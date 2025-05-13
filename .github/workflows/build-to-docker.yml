@@ -8,18 +8,20 @@ on:
         required: true
         default: latest
         type: string
+env:
+  AUTHOR: grunfink
+  NAME: snac2
 
 jobs:
   obtain:
     runs-on: ubuntu-latest
     outputs:
-    #   snac-url: ${{ steps.snac-url.outputs }}
       snac-ver: ${{ steps.snac-ver.outputs.snac-ver }}
     steps:
       - id: snac-url
         name: Find snac specific version
         run: |
-           snac_url=`curl -s -X 'GET' 'https://codeberg.org/api/v1/repos/grunfink/snac2/tags?page=1&limit=10' -H 'accept: application/json' | jq --arg ver "{{ inputs.tag }}" \
+           snac_url=`curl -s -X 'GET' 'https://codeberg.org/api/v1/repos/${{ env.AUTHOR }}/${{ env.NAME }}/tags?page=1&limit=10' -H 'accept: application/json' | jq --arg ver "{{ inputs.tag }}" \
            'map(select(.name == $ver)) as $match | 
            if ($match | length) > 0 then 
              $match[0].tarball_url 
@@ -27,10 +29,6 @@ jobs:
              .[0].tarball_url 
            end' - | tr -d '"'`
            echo "url=$snac_url" >> $GITHUB_OUTPUT
-        #    cat $GITHUB_OUTPUT
-        #    env.SNAC_URL=`cat ver.txt | tr -d '"'`
-        #    env.SNAC_VER=`echo ${{ env.SNAC_URL }} cut -d / -f 7`
-
       - name: Download source tarball
         run: curl -s -O ${{ steps.snac-url.outputs.url }}
       - id: snac-ver
@@ -51,20 +49,7 @@ jobs:
     permissions:
       packages: write
       contents: read
-
     steps:
-    # - name: Checkout repository
-      # uses: actions/checkout@v4
-      # with:
-        # fetch-depth: 0
-        # fetch-tags: 'true'
-    # - name: Output latest tag
-    # - name: Checkout selected tag
-      # uses: ./.github/actions/checkout-tag
-      # with:
-        # tag: ${{ inputs.tag }}
-    # - name: Output latest tag
-      # run: echo `pwd`; echo "${{ inputs.tag }}"
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
@@ -72,16 +57,11 @@ jobs:
     - name: Extract sources
       run: |
         tar -xzf ${{ needs.obtain.outputs.snac-ver }}
-        cd snac2
-        ls 
-      
     - name: Login to GitHub packages registry
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
     - name: Build the Docker image
       run: |
-        ls
         cd snac2
-        ls
         docker build . --file Dockerfile --tag snac2
     - name: Push built Docker image to the registry
       run: |
